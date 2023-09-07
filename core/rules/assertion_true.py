@@ -16,23 +16,21 @@ class AssertionTrueVisitor(WarningNodeVisitor):
     #  Implementar Clase
     def visit_Call(self, node: Call):
         if isinstance(node.func, Attribute):
-            if node.func.attr == 'assertTrue':
-                if isinstance(node.args, Name):
-                    if self.variables[node.args.id] == True:
+            if node.func.attr == "assertTrue":
+                if isinstance(node.args[0], Constant):
+                    if node.args[0].value == True:
                         self.addWarning("AssertTrueWarning", node.lineno, "useless assert true detected")
-                elif isinstance(node.args, Constant):
-                    if node.args.value == True:
-                        self.addWarning("AssertTrueWarning", node.lineno, "useless assert true detected")
+                elif isinstance(node.args[0], Name):
+                    if node.args[0].id in self.variables:
+                        if self.variables[node.args[0].id] == True:
+                            self.addWarning("AssertTrueWarning", node.lineno, "useless assert true detected")
 
-        if isinstance(node.func, Assign):
-            self.variables[node.func.targets[0].id] = node.func.value
-            print("Hay variables\n \n \n \n \n")
-            print(self.variables)
-                
-        NodeVisitor.generic_visit(self, node)
-    
+    def visit_Assign(self, node:Assign):
+        match node:
+            case Assign(targets=[Name(id=variable, ctx=Store())], value=Constant(value=valor, kind=None)):
+                self.variables[variable] = valor
 
-    
+                print(f"{variable} = {valor}")
 
 class AssertionTrueTestRule(Rule):
     #  Implementar Clase

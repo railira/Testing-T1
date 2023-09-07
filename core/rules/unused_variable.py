@@ -10,7 +10,9 @@ class UnusedVariableVisitor(WarningNodeVisitor):
 class UnusedVariableTestRule(Rule):
     #  Implementar Clase
     def analyze(self, node):
-        pass
+        visitor = UnusedVariableVisitor()
+        visitor.visit(node)
+        return visitor.warningsList()
         
     @classmethod
     def name(cls):
