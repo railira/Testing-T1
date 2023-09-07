@@ -1,46 +1,49 @@
-from _ast import BinOp, FunctionDef, Expr
+from _ast import Assign, AsyncFunctionDef, Attribute, BinOp, FunctionDef, Expr
 from typing import Any
 from ..rule import *
 
-
+# Warning(’UnusedVariable’, <line number>,’variable ’, <variable name>, ’has not been
+# used’)
 class UnusedVariableVisitor(WarningNodeVisitor):
     #  Implementar Clase
     def __init__(self):
         super().__init__()
-        self.variables = {}
+        self.variables = [] #guarda clases de variables
+        self.currentClass = None
 
-    def visit_Assign(self, node):
-        print("variable encontrada\n\n\n\n")
-        match node:
-            case Assign(
-                targets=[Name(id=p, ctx=Store())],
-                  value=Constant(value=valor, kind=None)):
-                self.variables[p] = [valor, node.lineno]
-            case Assign(
-                targets=[Name(id=p, ctx=Store())],
-                    value=BinOp(left=xx, op=op, right=yy)):
-                self.variables[p] = [valor, node.lineno]
-                node.generic_visit(self)
-  
-
-    def visit_Expr(self, node: FunctionDef) -> Any:
-        print("assert encontrado\n\n\n\n")
-        print(self.variables)
-        match node:
-            case Expr(name=name, args=args, body=body):
-                for i in body:
-                    match i:
-                        case Call(func=Attribute(value=Name(id='self', ctx=Load()), attr=attr, ctx=Load()),
-                                    args=args):
-                            
-                            if isinstance(args[0], Constant):
-                                if args[0].id in self.variables:
-                                    self.variables.pop(args[0].id)
-                            elif isinstance(args[0], Name):
-                                pass
+    def visit_FunctionDef(self, node: ClassDef) -> Any:
+        self.currentClass = node.name
+        NodeVisitor.generic_visit(self, node)
         
-        for i in self.variables:
-            self.addWarning('UnusedVariable', self.variables[i][1], f'variable {i} has not been used')
+        self.currentClass = None
+        if self.variables:
+            for i in self.variables:
+                self.addWarning("UnusedVariable", i.lineno, "variable " + i.id + " has not been used")
+        self.variables = []
+                
+    def visit_Assign(self, node: Assign) -> Any:
+        if self.currentClass is not None:
+            self.variables.append(node.targets[0])
+            NodeVisitor.generic_visit(self, node)
+
+    def visit_Call(self, node: Attribute) -> Any:
+        if self.currentClass is not None:
+            for i in self.variables:
+                for j in node.args:
+                    if i.id == j.id:
+                        self.variables.remove(i)
+            NodeVisitor.generic_visit(self, node)
+
+    def visit_BinOp(self, node: BinOp) -> Any:
+        if self.currentClass is not None:
+            for i in self.variables:
+                if isinstance(node.left, Name):
+                    if i.id == node.left.id:
+                        self.variables.remove(i)
+                if isinstance(node.right, Name):
+                    if i.id == node.right.id:
+                        self.variables.remove(i)
+            NodeVisitor.generic_visit(self, node)
                             
 
 
