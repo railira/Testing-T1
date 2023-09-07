@@ -44,12 +44,17 @@ print("test_unused_variable4")
 tree = """class TestCase():
 
 
-        def test_x(self):
-                x = 2
-                y = 3
+    def test_x(self):
+        x = 2
+        y = 2
+        z = False
+        self.assertTrue(z)
 
-        def test_y(self):
-                y = 5"""
+    def test_y(self):
+        x = 2
+        y = x + 2
+        z = False
+        self.assertTrue(z)"""
 
 tree = parse(tree)
 print(ast.dump(tree,indent=4))
